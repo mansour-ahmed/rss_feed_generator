@@ -1,5 +1,5 @@
 defmodule RssAutoGeneratorWeb.PageControllerTest do
-  use RssAutoGeneratorWeb.ConnCase
+  use RssAutoGeneratorWeb.ConnCase, async: true
 
   test "GET /", %{conn: conn} do
     conn = get(conn, ~p"/")
