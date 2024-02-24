@@ -20,6 +20,10 @@ if System.get_env("PHX_SERVER") do
   config :rss_auto_generator, RssAutoGeneratorWeb.Endpoint, server: true
 end
 
+config :instructor,
+  adapter: Instructor.Adapters.OpenAI,
+  openai: [api_key: System.fetch_env!("OPENAI_API_KEY")]
+
 if config_env() == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||

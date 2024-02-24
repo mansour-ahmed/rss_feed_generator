@@ -35,3 +35,5 @@ rss_auto_generator-*.tar
 npm-debug.log
 /assets/node_modules/
 
+
+.env
