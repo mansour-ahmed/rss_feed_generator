@@ -8,10 +8,12 @@ defmodule RssAutoGeneratorWeb.Router do
     plug :put_root_layout, html: {RssAutoGeneratorWeb.Layouts, :root}
     plug :protect_from_forgery
 
-    plug :put_secure_browser_headers, %{
-      "content-security-policy" => "default-src 'self' data:",
-      "x-xss-protection" => "1; mode=block"
-    }
+    plug :put_secure_browser_headers,
+         %{
+           "content-security-policy" =>
+             "default-src 'self'; frame-src 'self'; style-src * 'unsafe-inline'; img-src * data:; object-src 'none';",
+           "x-xss-protection" => "1; mode=block"
+         }
   end
 
   pipeline :api do
@@ -22,6 +24,7 @@ defmodule RssAutoGeneratorWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
+    get "/proxy", ProxyHtmlController, :proxy_html
   end
 
   # Other scopes may use custom stacks.
