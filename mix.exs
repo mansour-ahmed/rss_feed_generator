@@ -39,7 +39,7 @@ defmodule RssAutoGenerator.MixProject do
       {:phoenix_html, "~> 3.3"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_view, "~> 0.20.1"},
-      {:floki, ">= 0.30.0", only: :test},
+      {:floki, ">= 0.30.0"},
       {:phoenix_live_dashboard, "~> 0.8.2"},
       {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
       {:tailwind, "~> 0.2.0", runtime: Mix.env() == :dev},
@@ -55,7 +55,10 @@ defmodule RssAutoGenerator.MixProject do
       {:sobelow, "~> 0.13.0", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.7.4", only: [:dev, :test], runtime: false},
       {:mix_audit, "~> 2.1.2", only: [:dev, :test], runtime: false},
-      {:dialyxir, "~> 1.4.3", only: [:dev, :test], runtime: false}
+      {:dialyxir, "~> 1.4.3", only: [:dev, :test], runtime: false},
+      {:instructor, "~> 0.0.5"},
+      {:atomex, "~> 0.5.1"},
+      {:date_time_parser, "~> 1.2.0"}
     ]
   end
 
