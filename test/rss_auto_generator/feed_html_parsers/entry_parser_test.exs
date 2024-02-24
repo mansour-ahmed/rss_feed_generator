@@ -2,7 +2,7 @@ defmodule RssAutoGenerator.FeedHtmlParsers.EntryParserTest do
   use ExUnit.Case, async: true
 
   alias RssAutoGenerator.FeedHtmlParsers.EntryParser
-  alias RssAutoGenerator.RssFeed.Entry
+  alias RssAutoGenerator.Entries.Entry
 
   describe "parse_feed_entries/3" do
     setup do

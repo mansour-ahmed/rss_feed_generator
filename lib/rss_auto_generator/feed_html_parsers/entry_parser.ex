@@ -4,7 +4,7 @@ defmodule RssAutoGenerator.FeedHtmlParsers.EntryParser do
   """
 
   alias RssAutoGenerator.Utils.{Url, Date}
-  alias RssAutoGenerator.RssFeed.Entry
+  alias RssAutoGenerator.Entries.Entry
 
   @doc """
   Parses the HTML content of a page and extracts the RSS feed items from it.

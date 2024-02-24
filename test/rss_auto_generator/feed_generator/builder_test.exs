@@ -2,7 +2,7 @@ defmodule RssAutoGenerator.FeedGenerator.BuilderTest do
   use ExUnit.Case, async: true
 
   alias RssAutoGenerator.FeedGenerator.Builder
-  alias RssAutoGenerator.RssFeed.Entry
+  alias RssAutoGenerator.Entries.Entry
 
   describe "build_feed/5" do
     setup do

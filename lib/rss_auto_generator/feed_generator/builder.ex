@@ -1,7 +1,7 @@
 defmodule RssAutoGenerator.FeedGenerator.Builder do
   alias Atomex.{Feed, Entry}
 
-  alias RssAutoGenerator.RssFeed.Entry, as: RssFeedItem
+  alias RssAutoGenerator.Entries.Entry, as: RssFeedItem
 
   def build_feed(feed_source_url, entries, feed_title, description, feed_endpoint) do
     feed_source_url
