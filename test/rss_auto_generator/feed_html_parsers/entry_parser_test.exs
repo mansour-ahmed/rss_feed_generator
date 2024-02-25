@@ -1,6 +1,7 @@
 defmodule RssAutoGenerator.FeedHtmlParsers.EntryParserTest do
   use ExUnit.Case, async: true
 
+  alias RssAutoGenerator.FeedAnalyzer.HtmlSelectors
   alias RssAutoGenerator.FeedHtmlParsers.EntryParser
   alias RssAutoGenerator.Entries.Entry
 
@@ -127,9 +128,9 @@ defmodule RssAutoGenerator.FeedHtmlParsers.EntryParserTest do
     end
 
     test "gets entries from nested html items", %{html_with_nested_items: html} do
-      selectors = %{
-        "entry_link" => "body > div > main > div > ul > li > div > a > p",
-        "entry_published_at" => "body > div > main > div > ul > li > div > p"
+      selectors = %HtmlSelectors{
+        entry_link_selector: "body > div > main > div > ul > li > div > a > p",
+        entry_published_at_selector: "body > div > main > div > ul > li > div > p"
       }
 
       url = "https://example.com"
@@ -155,8 +156,8 @@ defmodule RssAutoGenerator.FeedHtmlParsers.EntryParserTest do
     test "gets entries from nested html items without date selector", %{
       html_with_nested_items: html
     } do
-      selectors = %{
-        "entry_link" => "body > div > main > div > ul > li > div > a > p"
+      selectors = %HtmlSelectors{
+        entry_link_selector: "body > div > main > div > ul > li > div > a > p"
       }
 
       url = "https://example.com"
@@ -180,9 +181,9 @@ defmodule RssAutoGenerator.FeedHtmlParsers.EntryParserTest do
     end
 
     test "gets entries from flat html items", %{html_with_flat_items: html} do
-      selectors = %{
-        "entry_link" => "body > div > main > article > h2 > a",
-        "entry_published_at" => "body > div > main > time > a"
+      selectors = %HtmlSelectors{
+        entry_link_selector: "body > div > main > article > h2 > a",
+        entry_published_at_selector: "body > div > main > time > a"
       }
 
       url = "https://example.com"
@@ -225,8 +226,8 @@ defmodule RssAutoGenerator.FeedHtmlParsers.EntryParserTest do
     end
 
     test "gets entries from flat html items without dates", %{html_with_flat_items: html} do
-      selectors = %{
-        "entry_link" => "body > div > main > article > h2 > a"
+      selectors = %HtmlSelectors{
+        entry_link_selector: "body > div > main > article > h2 > a"
       }
 
       url = "https://example.com"

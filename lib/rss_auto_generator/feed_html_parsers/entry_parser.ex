@@ -3,6 +3,7 @@ defmodule RssAutoGenerator.FeedHtmlParsers.EntryParser do
   Responsible for parsing the HTML content of a page and extracting the RSS feed items from it.
   """
 
+  alias RssAutoGenerator.FeedAnalyzer.HtmlSelectors
   alias RssAutoGenerator.Utils.{Url, Date}
   alias RssAutoGenerator.Entries.Entry
 
@@ -26,7 +27,7 @@ defmodule RssAutoGenerator.FeedHtmlParsers.EntryParser do
         }
       ]
   """
-  def parse_feed_entries(html_content, selectors, base_url) do
+  def parse_feed_entries(html_content, %HtmlSelectors{} = selectors, base_url) do
     case Floki.parse_document(html_content) do
       {:ok, document} ->
         valid_selectors = get_valid_selectors(selectors, document)
@@ -54,13 +55,14 @@ defmodule RssAutoGenerator.FeedHtmlParsers.EntryParser do
 
   defp parse_document(
          document,
-         %{
-           "entry_link" => entry_link_selector,
-           "entry_published_at" => entry_published_at_selector
+         %HtmlSelectors{
+           entry_link_selector: entry_link_selector,
+           entry_published_at_selector: entry_published_at_selector
          },
          url
        )
-       when entry_published_at_selector !== "" and entry_link_selector !== "" do
+       when is_binary(entry_link_selector) and is_binary(entry_published_at_selector) and
+              entry_link_selector !== "" and entry_published_at_selector !== "" do
     {container_selector, link_selector, published_at_selector} =
       find_common_parent_and_child_selectors(
         entry_link_selector,
@@ -84,8 +86,8 @@ defmodule RssAutoGenerator.FeedHtmlParsers.EntryParser do
 
   defp parse_document(
          document,
-         %{
-           "entry_link" => link_selector
+         %HtmlSelectors{
+           entry_link_selector: link_selector
          },
          url
        )

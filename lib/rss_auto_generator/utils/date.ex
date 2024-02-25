@@ -11,4 +11,10 @@ defmodule RssAutoGenerator.Utils.Date do
         nil
     end
   end
+
+  def format_date(date) do
+    date
+    |> NaiveDateTime.to_date()
+    |> Date.to_string()
+  end
 end

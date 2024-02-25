@@ -16,4 +16,12 @@ defmodule RssAutoGenerator.Utils.DateTest do
       assert nil == Date.parse_datetime(date)
     end
   end
+
+  describe "format_date/1" do
+    test "formats a date into a string" do
+      date = ~U[2020-01-01 00:00:00Z]
+
+      assert "2020-01-01" == Date.format_date(date)
+    end
+  end
 end

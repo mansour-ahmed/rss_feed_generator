@@ -19,6 +19,16 @@ defmodule RssAutoGeneratorWeb.CoreComponents do
   alias Phoenix.LiveView.JS
   import RssAutoGeneratorWeb.Gettext
 
+  slot :inner_block, required: true
+
+  def highlight_text(assigns) do
+    ~H"""
+    <span class="px-1 mx-0.5 bg-gradient-to-tr from-orange-100  to-yellow-100">
+      <%= render_slot(@inner_block) %>
+    </span>
+    """
+  end
+
   @doc """
   Renders a modal.
 
