@@ -22,6 +22,8 @@ defmodule RssAutoGeneratorWeb.Router do
     live "/", HomeLive.Index, :rss
 
     get "/proxy", ProxyHtmlController, :proxy_html
+
+    get "/:id/feed.atom", RssGeneratorController, :show
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
