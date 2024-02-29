@@ -5,7 +5,7 @@ defmodule RssAutoGeneratorWeb.Layouts do
     ~H"""
     <header class="p-2 sm:py-3 sm:px-10 flex flex-row items-center justify-between">
       <.link href={~p"/"}>
-        <div class="w-12 h-12 sm:h-20 sm:w-20 bg-black"></div>
+        <img src="/images/logo.png" alt="App Logo" class="w-20 sm:w-24" />
       </.link>
       <ul class="relative flex flex-wrap items-center gap-4 sm:gap-8 px-4 sm:px-6 lg:px-8 sm:justify-end">
         <li>
@@ -49,6 +49,7 @@ defmodule RssAutoGeneratorWeb.Layouts do
       <aside>
         Created by Ahmed Mansour
       </aside>
+      <img src="/images/signature.jpg" class="w-28" alt="Ahmed's signature Logo" />
     </footer>
     """
   end
