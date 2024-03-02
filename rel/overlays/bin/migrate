@@ -1,0 +1,5 @@
+#!/bin/sh
+set -eu
+
+cd -P -- "$(dirname -- "$0")"
+exec ./rss_auto_generator eval RssAutoGenerator.Release.migrate
