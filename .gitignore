@@ -37,3 +37,6 @@ npm-debug.log
 
 
 .env
+
+# Development database data mapped to Postgres Docker container
+postgres-data
