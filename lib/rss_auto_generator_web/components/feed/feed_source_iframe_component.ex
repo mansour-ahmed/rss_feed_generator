@@ -1,6 +1,11 @@
 defmodule RssAutoGeneratorWeb.Feed.FeedSourceIframeComponent do
   use RssAutoGeneratorWeb, :live_component
 
+  # Safari blocks Script Execution Without allow-scripts Even if allow-same-origin Is Set
+  # Hence, the allow-scripts for Safari is a workaround to enable the addition of event listeners.
+  # However, 'allow-scripts' reduces security.
+  # This workaround is added for dmeo purposes only and is not recommended for production use.
+  # For more info see: https://caniuse.com/mdn-html_elements_iframe_sandbox_allow-same-origin
   @impl true
   def render(assigns) do
     ~H"""
@@ -12,7 +17,7 @@ defmodule RssAutoGeneratorWeb.Feed.FeedSourceIframeComponent do
         height="100%"
         class="absolute"
         src={@rss_feed_url && "/proxy?url=#{@rss_feed_url}"}
-        sandbox="allow-same-origin"
+        sandbox={"allow-same-origin#{if @safari_user_agent?, do: " allow-scripts"}"}
       />
       <%= if @loading? do %>
         <div class="animate-pulse bg-gray-600 h-full w-full absolute z-10"></div>

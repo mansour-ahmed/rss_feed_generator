@@ -7,6 +7,7 @@ defmodule RssAutoGeneratorWeb.FeedLive.New do
   alias RssAutoGenerator.{Feeds, Entries.Entry}
   alias RssAutoGenerator.FeedAnalyzer.{LlmAnalyzer, HtmlSelectors}
   alias RssAutoGenerator.FeedHtmlParsers.{MetadataParser, EntryParser, HtmlParser}
+  alias RssAutoGeneratorWeb.Utils.UserAgent
 
   @impl true
   def render(assigns) do
@@ -54,6 +55,7 @@ defmodule RssAutoGeneratorWeb.FeedLive.New do
                 selector={Map.get(rss_feed.selectors, @selected_category)}
                 category={@selected_category}
                 loading?={@iframe_loading?}
+                safari_user_agent?={@safari_user_agent?}
               />
               <.feed_preview_component
                 rss_feed_entries={rss_feed.entries}
@@ -78,7 +80,7 @@ defmodule RssAutoGeneratorWeb.FeedLive.New do
   end
 
   @impl true
-  def mount(_params, _session, socket) do
+  def mount(_params, %{"user_agent" => user_agent}, socket) do
     {
       :ok,
       socket
@@ -88,6 +90,7 @@ defmodule RssAutoGeneratorWeb.FeedLive.New do
           entry_published_at_selector: "rgba(0, 255, 0, 0.2)"
         }
       )
+      |> assign(safari_user_agent?: UserAgent.safari_user_agent?(user_agent))
       |> assign(iframe_loading?: false)
       |> assign(entries_content_loading?: false)
       |> init_feed_search_session()
