@@ -99,7 +99,7 @@ const handleSelectMode = (iframeEvent, iframe) => (_) => {
 };
 
 const addIframeHighlightStyles = (iframeDocument, hoverClassName) => {
-  style = iframeDocument.createElement("style");
+  const style = iframeDocument.createElement("style");
   style.innerHTML = `
     .${hoverClassName} {
       cursor: pointer;
@@ -172,13 +172,47 @@ const onClick = (event) => {
 };
 
 const generateCSSSelector = (element) => {
-  let parts = [];
+  let selectorWithClassesParts = [];
+  let tagSelectorParts = [];
+  const documentElement = element.ownerDocument || element.documentElement;
+
   while (element.parentElement) {
-    let tagName = element.tagName.toLowerCase();
-    parts.unshift(tagName);
+    const tagName = element.tagName.toLowerCase();
+
+    const className = Array.from(element.classList)
+      .filter((c) => !c.includes(HIGHLIGHTED_HOVER_CLASS))
+      .filter((c) => !c.includes(":")) // Removes pseudo-classes && Tailwind modifiers
+      .join(".");
+
+    selectorWithClassesParts.unshift(
+      `${tagName}${className ? `.${className}` : ""}`
+    );
+    tagSelectorParts.unshift(tagName);
+
     element = element.parentElement;
   }
-  return parts.join(" > ");
+
+  const selectorWithClasses = selectorWithClassesParts.join(" > ");
+  const tagSelector = tagSelectorParts.join(" > ");
+
+  const selectorWithClassesMatches =
+    documentElement.querySelectorAll(selectorWithClasses).length;
+
+  if (selectorWithClassesMatches > 1) {
+    // Selectors with classes get preference as they are more specific
+    return selectorWithClasses;
+  }
+
+  const tagSelectorMatches =
+    documentElement.querySelectorAll(tagSelector).length;
+
+  if (tagSelectorMatches > 1) {
+    return tagSelector;
+  }
+
+  return selectorWithClassesMatches > tagSelectorMatches
+    ? selectorWithClasses
+    : tagSelector;
 };
 
 const sendMessageToParent = (message) => {

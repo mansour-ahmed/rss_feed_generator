@@ -58,7 +58,7 @@ defmodule RssAutoGenerator.Utils.Url do
     if relative_url? do
       relative_path = get_relative_url(url_path)
       %{scheme: base_url_scheme, host: base_url_host} = URI.parse(base_url)
-      "#{base_url_scheme}://#{base_url_host}#{relative_path}?#{query}"
+      "#{base_url_scheme}://#{base_url_host}#{relative_path}#{query && "?" <> query}"
     else
       url
     end

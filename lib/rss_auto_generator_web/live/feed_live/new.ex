@@ -365,8 +365,9 @@ defmodule RssAutoGeneratorWeb.FeedLive.New do
           nil
       end
 
-    entry
-    |> Map.put(:content, content)
+    if !!content and String.valid?(content),
+      do: Map.put(entry, :content, content),
+      else: entry
   end
 
   @impl true

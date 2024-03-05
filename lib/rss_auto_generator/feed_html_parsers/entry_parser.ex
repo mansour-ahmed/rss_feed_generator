@@ -4,8 +4,9 @@ defmodule RssAutoGenerator.FeedHtmlParsers.EntryParser do
   """
 
   alias RssAutoGenerator.FeedAnalyzer.HtmlSelectors
-  alias RssAutoGenerator.Utils.{Url, Date}
+  alias RssAutoGenerator.Utils.Date
   alias RssAutoGenerator.Entries.Entry
+  alias RssAutoGenerator.FeedHtmlParsers.EntryParserUtils
 
   @doc """
   Parses the HTML content of a page and extracts the RSS feed items from it.
@@ -43,11 +44,11 @@ defmodule RssAutoGenerator.FeedHtmlParsers.EntryParser do
       selectors
       |> Map.from_struct()
       |> Map.to_list()
+      |> Enum.map(fn {key, value} ->
+        {key, EntryParserUtils.remove_browser_implicit_tbody(value, document)}
+      end)
       |> Enum.filter(fn {_, value} ->
-        !!value &&
-          document
-          |> Floki.find(value)
-          |> Enum.count() > 0
+        EntryParserUtils.selector_has_matches?(value, document)
       end)
 
     struct(HtmlSelectors, valid_selectors)
@@ -63,25 +64,30 @@ defmodule RssAutoGenerator.FeedHtmlParsers.EntryParser do
        )
        when is_binary(entry_link_selector) and is_binary(entry_published_at_selector) and
               entry_link_selector !== "" and entry_published_at_selector !== "" do
+    {anchor_element_selector, title_element_selector} =
+      EntryParserUtils.find_anchor_selector_and_title_selector(entry_link_selector)
+
     {container_selector, link_selector, published_at_selector} =
-      find_common_parent_and_child_selectors(
-        entry_link_selector,
+      EntryParserUtils.find_common_parent_and_child_selectors(
+        anchor_element_selector,
         entry_published_at_selector
       )
 
-    anchor_element_selector = find_anchor_selector(link_selector)
-
-    document
-    |> Floki.find(container_selector)
-    |> Enum.flat_map(fn container_node ->
-      parse_full_entries(
-        container_node,
-        link_selector,
-        published_at_selector,
-        anchor_element_selector,
-        url
-      )
-    end)
+    if container_selector !== "" do
+      document
+      |> Floki.find(container_selector)
+      |> Enum.flat_map(fn container_node ->
+        parse_entries(
+          container_node,
+          link_selector,
+          published_at_selector,
+          title_element_selector,
+          url
+        )
+      end)
+    else
+      parse_document(document, %HtmlSelectors{entry_link_selector: link_selector}, url)
+    end
   end
 
   defp parse_document(
@@ -92,76 +98,43 @@ defmodule RssAutoGenerator.FeedHtmlParsers.EntryParser do
          url
        )
        when is_binary(link_selector) and link_selector !== "" do
-    anchor_element_selector = find_anchor_selector(link_selector)
+    {anchor_element_selector, title_element_selector} =
+      EntryParserUtils.find_anchor_selector_and_title_selector(link_selector)
 
     document
     |> Floki.find(anchor_element_selector)
-    |> Enum.map(fn container_node ->
+    |> Enum.map(fn element ->
       %Entry{
-        title: get_text_from_node(container_node),
-        link: get_href_from_node(container_node, url)
+        title: EntryParserUtils.get_text_by_selector(element, title_element_selector),
+        link: EntryParserUtils.get_href_from_node(element, url)
       }
     end)
   end
 
   defp parse_document(_, _selectors, _url), do: []
 
-  defp find_anchor_selector(selector) do
-    parts = String.split(selector, ">")
-    index = Enum.find_index(parts, fn part -> part === " a " end) || Enum.count(parts) - 1
-    taken = Enum.take(parts, (Enum.count(parts) > 2 && index + 1) || index)
-    Enum.join(taken, ">")
-  end
+  defp parse_entries(el, link_selector, published_at_selector, title_selector, url) do
+    link_is_container? = link_selector === ""
 
-  defp find_common_parent_and_child_selectors(selector1, selector2)
-       when is_binary(selector1) and is_binary(selector2) do
-    parts1 = String.split(selector1, " > ")
-    parts2 = String.split(selector2, " > ")
+    entry_wrapped_by_container? =
+      entry_wrapped_by_container?(el, link_selector, published_at_selector)
 
-    {common_parent_parts, child_selector1_parts, child_selector2_parts} =
-      find_common_and_child_parts(parts1, parts2, [], [], [])
-
-    common_parent = Enum.join(common_parent_parts, " > ")
-    child_selector1 = Enum.join(child_selector1_parts, " > ")
-    child_selector2 = Enum.join(child_selector2_parts, " > ")
-
-    {common_parent, child_selector1, child_selector2}
-  end
-
-  defp find_common_parent_and_child_selectors(selector1, selector2),
-    do: {nil, selector1, selector2}
-
-  defp find_common_and_child_parts([], parts2, common, child1, _child2),
-    do: {common, child1, parts2}
-
-  defp find_common_and_child_parts(parts1, [], common, _child1, child2),
-    do: {common, parts1, child2}
-
-  defp find_common_and_child_parts([head1 | tail1], [head2 | tail2], common, child1, child2) do
-    if head1 == head2 do
-      find_common_and_child_parts(tail1, tail2, common ++ [head1], child1, child2)
-    else
-      {common, [head1 | tail1], [head2 | tail2]}
-    end
-  end
-
-  defp parse_full_entries(el, link_selector, published_at_selector, anchor_element_selector, url) do
-    if entry_wrapped_by_container?(el, link_selector, published_at_selector) do
+    if entry_wrapped_by_container? || link_is_container? do
       [
-        parse_rss_entry_from_container(
+        parse_entry_with_container(
           el,
+          url,
+          title_selector,
           link_selector,
-          published_at_selector,
-          anchor_element_selector,
-          url
+          published_at_selector
         )
       ]
     else
-      parse_rss_entries_from_document(
+      parse_entries_without_container(
         el,
-        link_selector,
+        title_selector,
         published_at_selector,
-        anchor_element_selector,
+        link_selector,
         url
       )
     end
@@ -183,27 +156,31 @@ defmodule RssAutoGenerator.FeedHtmlParsers.EntryParser do
     title_count === 1 and dates_count === 1
   end
 
-  defp parse_rss_entry_from_container(
+  defp parse_entry_with_container(
          container_element,
+         base_url,
          title_selector,
-         date_selector,
          link_selector,
-         base_url
+         date_selector
        ) do
     {container_tag, _, _} = container_element
 
+    title_selector =
+      if title_selector !== "",
+        do: "#{link_selector} > #{title_selector}",
+        else: link_selector
+
     %Entry{
-      title: get_text_by_selector(container_element, "#{container_tag} > #{title_selector}"),
-      link:
-        get_url_by_selector(container_element, "#{container_tag} > #{link_selector}", base_url),
+      title: EntryParserUtils.get_text_by_selector(container_element, title_selector),
+      link: EntryParserUtils.get_href_from_node(container_element, base_url),
       published_at:
         container_element
-        |> get_text_by_selector("#{container_tag} > #{date_selector}")
+        |> EntryParserUtils.get_text_by_selector("#{container_tag} > #{date_selector}")
         |> Date.parse_datetime()
     }
   end
 
-  defp parse_rss_entries_from_document(
+  defp parse_entries_without_container(
          document,
          title_selector,
          date_selector,
@@ -214,20 +191,29 @@ defmodule RssAutoGenerator.FeedHtmlParsers.EntryParser do
       document
       |> Floki.children()
       |> group_articles_by_date(
-        title_selector,
+        link_selector,
         date_selector
       )
 
     Enum.flat_map(article_nodes_by_date, fn {date, articles} ->
       published_at =
         date
-        |> get_text_by_selector(date_selector)
+        |> EntryParserUtils.get_text_by_selector(date_selector)
         |> Date.parse_datetime()
 
       Enum.map(articles, fn article ->
+        title_selector =
+          if title_selector !== "",
+            do: "#{link_selector} >  #{title_selector}",
+            else: link_selector
+
         %Entry{
-          title: get_text_by_selector(article, title_selector),
-          link: get_url_by_selector(article, link_selector, url),
+          title:
+            EntryParserUtils.get_text_by_selector(
+              article,
+              title_selector
+            ),
+          link: EntryParserUtils.get_url_by_selector(article, link_selector, url),
           published_at: published_at
         }
       end)
@@ -235,29 +221,29 @@ defmodule RssAutoGenerator.FeedHtmlParsers.EntryParser do
   end
 
   defp group_articles_by_date(document_nodes, title_selector, date_selector) do
-    title_tag =
-      title_selector
-      |> String.split(" > ")
-      |> hd()
-
-    date_tag =
-      date_selector
-      |> String.split(" > ")
-      |> hd()
-
     {last_articles_batch, last_known_date, groups} =
       document_nodes
-      |> Enum.reduce({[], nil, []}, fn
-        {^date_tag, _, _} = date, {articles, current_date, article_groups} ->
-          article_groups = get_article_groups(articles, current_date, article_groups)
-          {[], date, article_groups}
+      |> Enum.reduce(
+        {[], nil, []},
+        fn
+          element, {articles, current_date, article_groups} ->
+            published_at? = Floki.find(element, date_selector) !== []
+            title? = Floki.find(element, title_selector) !== []
 
-        {^title_tag, _, _} = new_article, {articles, current_date, article_groups} ->
-          {[new_article | articles], current_date, article_groups}
+            cond do
+              published_at? ->
+                group_date = current_date || element
+                article_groups = get_article_groups(articles, group_date, article_groups)
+                {[], element, article_groups}
 
-        _, state ->
-          state
-      end)
+              title? ->
+                {[element | articles], current_date, article_groups}
+
+              true ->
+                {articles, current_date, article_groups}
+            end
+        end
+      )
 
     last_articles_batch
     |> get_article_groups(last_known_date, groups)
@@ -265,34 +251,8 @@ defmodule RssAutoGenerator.FeedHtmlParsers.EntryParser do
   end
 
   defp get_article_groups(articles, current_date, article_groups)
-       when not is_nil(current_date) and articles !== [] do
-    [{current_date, Enum.reverse(articles)} | article_groups]
-  end
+       when not is_nil(current_date) and articles !== [],
+       do: [{current_date, Enum.reverse(articles)} | article_groups]
 
   defp get_article_groups(_articles, _current_date, article_groups), do: article_groups
-
-  defp get_text_by_selector(document, selector) do
-    document
-    |> Floki.find(selector)
-    |> get_text_from_node()
-  end
-
-  defp get_text_from_node(node) do
-    node
-    |> Floki.text(deep: true)
-    |> String.trim()
-  end
-
-  defp get_url_by_selector(document, selector, base_url) do
-    document
-    |> Floki.find(selector)
-    |> get_href_from_node(base_url)
-  end
-
-  defp get_href_from_node(node, base_url) do
-    node
-    |> Floki.attribute("href")
-    |> Enum.at(0)
-    |> Url.get_absolute_url(base_url)
-  end
 end
